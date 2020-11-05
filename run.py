@@ -19,11 +19,11 @@ else:
     envs = {'data_path': './data/'}
 
 kernels = [DoGKernel(3,3/9,6/9),
-		DoGKernel(3,6/9,3/9),
-		DoGKernel(7,7/9,14/9),
-		DoGKernel(7,14/9,7/9),
-		DoGKernel(13,13/9,26/9),
-		DoGKernel(13,26/9,13/9)]
+	DoGKernel(3,6/9,3/9),
+	DoGKernel(7,7/9,14/9),
+	DoGKernel(7,14/9,7/9),
+	DoGKernel(13,13/9,26/9),
+	DoGKernel(13,26/9,13/9)]
 
 filter = Filter(kernels, padding = 6, thresholds = 50)
 s1c1 = S1C1Transform(filter)
@@ -45,11 +45,10 @@ train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True
 test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True, pin_memory=True, num_workers=4)
 
 data_len = len(train_dataset)
-print(data_len)
 print('\033[94m'+'\nStarting UNSUPERVISED training :\n\033[0m')
 
 epochs = [5, 10]
-net = KheradpishehMNIST().to(device)
+net = KheradpishehMNIST(features_per_class=10).to(device)
 estimator = UnsupervisedEstimator(net, save_path='./saved_models/')
 train_perf, test_perf = estimator.eval(train_dataloader=train_dataloader, 
 									test_dataloader=test_dataloader,
@@ -61,8 +60,8 @@ write_perf_file(net, data_len, estimator.type, kernels, epochs, envs['training_d
 
 print('\033[94m'+'\nStarting SUPERVISED training :\n\033[0m')
 
-epochs = [2, 4, 10]
-net = MozafariMNIST(input_channels=6, output_channels=40, num_classes=number_of_class).to(device)
+epochs = [2, 4, 8]
+net = MozafariMNIST(input_channels=6, features_per_class=10, num_classes=number_of_class).to(device)
 estimator = SupervisedEstimator(net, save_path='./saved_models/')
 train_perf, test_perf = estimator.eval(train_dataloader=train_dataloader, 
 									test_dataloader=test_dataloader,

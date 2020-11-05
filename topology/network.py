@@ -48,7 +48,7 @@ class AbstractNetwork(ABC):
 
 
 class Network(torch.nn.Module, AbstractNetwork):
-    def __init__(self, input_channels : int, output_channels : int, num_classes : int,
+    def __init__(self, input_channels : int, features_per_class : int, num_classes : int,
                 ks : list, inh_radiuses : list, conv_t : list, name : str) -> None:
         torch.nn.Module.__init__(self)
         AbstractNetwork.__init__(self, name)
@@ -60,7 +60,9 @@ class Network(torch.nn.Module, AbstractNetwork):
         self.pool_layer_list = []
         self.rule_list = []
         self.input_channels = input_channels
-        self.output_channels = output_channels
+        self.features_per_class = features_per_class
+        self.output_channels = self.features_per_class * self.num_classes
+
 
 
     def add_layer(self, layer, name=None) -> None:
@@ -194,10 +196,9 @@ class Network(torch.nn.Module, AbstractNetwork):
 
 class RSTDP_Network(Network):
 
-    def __init__(self, input_channels : int, output_channels : int, num_classes : int, 
+    def __init__(self, input_channels : int, features_per_class : int, num_classes : int, 
                 ks : list,  inh_radiuses : list, conv_t : list, name : str = None):
-        Network.__init__(self, input_channels, output_channels, num_classes, ks, inh_radiuses, conv_t, name)
-        self.features_per_class = int(self.output_channels / self.num_classes)
+        Network.__init__(self, input_channels, features_per_class, num_classes, ks, inh_radiuses, conv_t, name)
         self.decision_map = []
         for i in range(self.num_classes):
             self.decision_map.extend([i]*self.features_per_class)
