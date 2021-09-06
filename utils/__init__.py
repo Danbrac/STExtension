@@ -41,10 +41,12 @@ def count_layer_instance(net, instance):
             c += 1
     return c
 
-def write_perf_file(network, data_len, model_type, kernels, epochs, training_data_path, train_perf, test_perf):
-    with open('performance.txt', 'a') as f:
+def write_perf_file(network, task, data_len, model_type, kernels, epochs, train_perf, test_perf):
+    with open('performance_{}.txt'.format(task), 'a') as f:
         f.write("""
-        
+
+            ######## {} PERFORMANCES ########
+
             Date : {}
             Network : {}
             Data length : {}
@@ -52,12 +54,14 @@ def write_perf_file(network, data_len, model_type, kernels, epochs, training_dat
             Filters : {}
             Number of Kernels : {}
             Epochs : {}
-            Training data file : {}
             Train performances (correct, incorrect + silence, silence) : {}
             Test performances (correct, incorrect + silence, silence) : {}
-            """.format(
+            
+            ######## END ########
+
+            """.format(task.upper(),
                 datetime.now(), network.name, data_len, model_type, kernels[0].__class__.__name__, len(kernels),
-                str(epochs), training_data_path,
+                str(epochs),
                 str(train_perf),
                 str(test_perf)
         ))

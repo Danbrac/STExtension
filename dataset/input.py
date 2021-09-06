@@ -1,6 +1,7 @@
 from torchvision import transforms
 from .encoding import Intensity2Latency
 from utils import functional as sf
+from filters import apply_adf
 
 class InputTransform:
     def __init__(self, filter, timesteps = 15):
@@ -31,8 +32,21 @@ class S1C1Transform:
 		self.temporal_transform = Intensity2Latency(timesteps)
 		self.cnt = 0
 
-	def __call__(self, image):
-		image = self.to_tensor(image) * 255
+    def __call__(self, image):
+        image = self.to_tensor(image) * 255
+		image.unsqueeze_(0)
+		image = self.filter(image)
+		image = sf.local_normalization(image, 8)
+		temporal_image = self.temporal_transform(image)
+		return temporal_image.sign().byte()
+        
+class MRITransform(S1C1Transform):
+	def __init__(self, filter, timesteps = 15):
+        S1C1Transform.__init__(self, filter, timesteps)
+
+    def __call__(self, image):
+        image = self.apply_adf(image)
+        image = self.to_tensor(self.grayscale(image))
 		image.unsqueeze_(0)
 		image = self.filter(image)
 		image = sf.local_normalization(image, 8)

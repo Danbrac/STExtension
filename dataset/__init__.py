@@ -51,43 +51,12 @@ class CacheDataset(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.dataset)
 
-class H5Dataset(torch.utils.data.Dataset):
-    
-    def __init__(self, f_path, length=None, transform=None):
-        super().__init__()
-        self.f_path = f_path
-        self.length = length
-        self.data, self.target = self._load_data(self.f_path)
-        self.shape = self.data.shape
-        self.transform = transform
-    
-    def __len__(self):
-        return len(self.data)
-    
-    def __getitem__(self, idx):
-        data = self.data[idx]
-        data = Image.fromarray(data.astype('uint8'), 'L')
-        data = cv2.equalizeHist(np.array(data))
-        target = self.target[idx]
-        if self.transform is not None:
-            data = self.transform(data)
-        return data, int(target)
-    
-    def _load_data(self, file_path):
-        f = h5py.File(file_path, 'r')
-        
-        if self.length:
-            data = f['x'][:self.length]
-            target = f['y'][:self.length]
-        else:
-            data = f['x'][:][1:]
-            target = f['y'][1:]
-        h, w = data.shape[1], data.shape[2]
-        print('Original dataset shape {}'.format(Counter(target)))
-        ros = RandomUnderSampler()
-        data = np.reshape(data, (data.shape[0], h*w))
-        data, target = ros.fit_sample(data, target)
-        data = np.reshape(data, (data.shape[0], h, w))
-        print('Resampled dataset shape {} \n'.format(Counter(target)))
-        print('Dataset size : {}'.format(data.shape))
-        return data, target
+
+def load_dataset(path, transform):
+
+    trainsetfolder = CacheDataset(torch.utils.data.ImageFolder(path, transform))
+    trainsetfolder, testsetfolder = torch.utils.data.random_split(trainsetfolder, 
+                            [int(len(trainsetfolder) * 0.8), len(trainsetfolder) - int(len(trainsetfolder) * 0.8)])
+    trainset = torch.utils.data.DataLoader(trainsetfolder, batch_size = len(trainsetfolder), shuffle = False)
+    testset = torch.utils.data.DataLoader(testsetfolder, batch_size = len(testsetfolder), shuffle = False)
+    return trainset, testset

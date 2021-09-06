@@ -64,7 +64,6 @@ class Network(torch.nn.Module, AbstractNetwork):
         self.output_channels = self.features_per_class * self.num_classes
 
 
-
     def add_layer(self, layer, name=None) -> None:
         """
         Parameters
@@ -192,7 +191,6 @@ class Network(torch.nn.Module, AbstractNetwork):
                 else:
                     spk_in = self.compute_pool_layer(spk_in, idx)
                 return spk_in
-        
 
 class RSTDP_Network(Network):
 
