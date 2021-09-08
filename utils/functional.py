@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as fn
 import numpy as np
+import math
 from . import to_pair
 
 
@@ -284,3 +285,70 @@ def local_normalization(input, normalization_radius, eps=1e-12):
 	y.squeeze_(1)
 	y.unsqueeze_(0)
 	return y
+
+def generate_inhibition_kernel(inhibition_percents):
+	r"""Generates an inhibition kernel suitable to be used by :func:`~functional.intensity_lateral_inhibition`.
+	Args:
+		inhibition_percents (sequence): The sequence of inhibition factors (in range [0,1]).
+	Returns:
+		Tensor: Inhibition kernel.
+	"""
+	inhibition_kernel = torch.zeros(2*len(inhibition_percents)+1, 2*len(inhibition_percents)+1).float()
+	center = len(inhibition_percents)
+	for i in range(2*len(inhibition_percents)+1):
+		for j in range(2*len(inhibition_percents)+1):
+			dist = int(max(math.fabs(i - center), math.fabs(j - center)))
+			if dist != 0:
+				inhibition_kernel[i,j] = inhibition_percents[dist - 1]
+	return inhibition_kernel
+
+
+class LateralIntencityInhibition(object):
+	r"""Applies lateral inhibition on intensities. For each location, this inhibition decreases the intensity of the
+	surrounding cells that has lower intensities by a specific factor. This factor is relative to the distance of the
+	neighbors and are put in the :attr:`inhibition_percents`.
+	Args:
+		inhibition_percents (sequence): The sequence of inhibition factors (in range [0,1]).
+	"""
+	def __init__(self, inhibition_percents):
+		self.inhibition_kernel = generate_inhibition_kernel(inhibition_percents)
+		self.inhibition_kernel.unsqueeze_(0).unsqueeze_(0)
+
+	# decrease lateral intencities by factors given in the inhibition_kernel
+	def intensity_lateral_inhibition(self, intencities):
+		intencities.squeeze_(0)
+		intencities.unsqueeze_(1)
+
+		inh_win_size = self.inhibition_kernel.size(-1)
+		rad = inh_win_size//2
+		# repeat each value
+		values = intencities.reshape(intencities.size(0),intencities.size(1),-1,1)
+		values = values.repeat(1,1,1,inh_win_size)
+		values = values.reshape(intencities.size(0),intencities.size(1),-1,intencities.size(-1)*inh_win_size)
+		values = values.repeat(1,1,1,inh_win_size)
+		values = values.reshape(intencities.size(0),intencities.size(1),-1,intencities.size(-1)*inh_win_size)
+		# extend patches
+		padded = fn.pad(intencities,(rad,rad,rad,rad))
+		# column-wise
+		patches = padded.unfold(-1,inh_win_size,1)
+		patches = patches.reshape(patches.size(0),patches.size(1),patches.size(2),-1,patches.size(3)*patches.size(4))
+		patches.squeeze_(-2)
+		# row-wise
+		patches = patches.unfold(-2,inh_win_size,1).transpose(-1,-2)
+		patches = patches.reshape(patches.size(0),patches.size(1),1,-1,patches.size(-1))
+		patches.squeeze_(-3)
+		# compare each element by its neighbors
+		coef = values - patches
+		coef.clamp_(min=0).sign_() # "ones" are neighbors greater than center
+		# convolution with full stride to get accumulative inhibiiton factor
+		factors = fn.conv2d(coef, self.inhibition_kernel, stride=inh_win_size)
+		result = intencities + intencities * factors
+
+		intencities.squeeze_(1)
+		intencities.unsqueeze_(0)
+		result.squeeze_(1)
+		result.unsqueeze_(0)
+		return result
+
+	def __call__(self,input):
+		return self.intensity_lateral_inhibition(input)

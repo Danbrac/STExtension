@@ -2,7 +2,7 @@ from topology.layers import Convolution, Pooling
 from topology.network import RSTDP_Network
 from torch import nn
 
-class MozafariMNIST(RSTDP_Network):
+class DeepRSTDP(RSTDP_Network):
     def __init__(self, name : str = 'MozafariDeep', input_channels : int = 6, features_per_class : int = 10,
                     num_classes : int = 10, ks : list = [5, 8],
                     inh_radiuses : list = [3, 1], conv_t : list = [15, 10]):

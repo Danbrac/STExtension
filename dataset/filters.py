@@ -1,7 +1,10 @@
 import torch, math, cv2
 import torch.nn.functional as fn
 import numpy as np
+import cv2
 from PIL import Image
+from skimage import color
+
 
 class FilterKernel:
 	r"""Base class for generating image filter kernels such as Gabor, DoG, etc. Each subclass should override :attr:`__call__` function.
@@ -194,15 +197,6 @@ class ADF(object):
         l = color.rgb2gray(diff_im)
         l = cv2.normalize(l, None, 0, 255, cv2.NORM_MINMAX).astype('uint8')
         return l
-
-def apply_adf(self, image):
-        im = image.convert('RGB') 
-        open_cv_image = np.array(im) 
-        open_cv_image = open_cv_image[:, :, ::-1].copy() 
-        im = ADF(num_iter=4,delta_t=1/7,kappa=30,option=2).fit(open_cv_image)
-        im = cv2.normalize(im, None, 0, 255, cv2.NORM_MINMAX)
-        im = Image.fromarray(im)
-        return im
 
 def make_filter(kernels, ratio=9, type='dog', padding=6, thresholds=50):
     ks = []

@@ -78,6 +78,7 @@ class SupervisedEstimator(AbstractEstimator):
         self.anp_adapt = self.anp * (perf[0] * self.adaptive_int + self.adaptive_min)
 
     def eval(self, train_dataloader, test_dataloader, epochs):
+        print('\033[94m'+'\nStarting SUPERVISED training :\n\033[0m')
         if len(epochs) != len(self.network.conv_layer_list):
             raise ValueError('Number of elements in epochs list should be equal to the number of layers in the network')
         t = int(datetime.now().timestamp())

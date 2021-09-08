@@ -48,3 +48,5 @@ class Intensity2Latency:
 		if self.to_spike:
 			return self.intensity_to_latency(image).sign()
 		return self.intensity_to_latency(image)
+
+

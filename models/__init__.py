@@ -1,2 +1,2 @@
-from .supervised import MozafariMNIST
-from .unsupervised import KheradpishehMNIST
+from .supervised import DeepRSTDP
+from .unsupervised import DeepSTDP
